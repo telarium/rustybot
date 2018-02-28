@@ -45,27 +45,11 @@ class WebServer:
 
     @app.route("/")
     def index():
-        if app.adminMode:
-            return app.send_static_file('admin.html'), 200
-        else:
-            return app.send_static_file('index.html'), 200
-
-    @app.route("/generate_204")
-    def captivePortal():
-        print "CAPTIVE PORTAL"
-        return ('', 204)
+        return app.send_static_file('index.html'), 200
 
     @app.errorhandler(404)
     def page_not_found(error):
-        if app.adminMode:
-            return app.send_static_file('admin.html'), 200
-        else:
-            return app.send_static_file('index.html'), 200
-
-    @app.errorhandler(400)
-    def page_error(error):
-        print "Error 400?!"
-        return "ok", 200
+        return app.send_static_file('index.html'), 200
 
     @app.route('/', methods=['POST'])
     def do_admin_settings():
@@ -73,23 +57,6 @@ class WebServer:
         print request.method
         if request.method=='POST':
             return ('', 204)
-
-    @app.route("/download")
-    def download():
-        csv = '1,2,3\n4,5,6\n'
-        return Response(
-            csv,
-            mimetype="text/csv",
-            headers={"Content-disposition":
-                     "attachment; filename=forms.csv"})
-        
-    #@app.route('/', methods=['POST'])
-    #def do_admin_login():
-    #    if request.form['password'] == app.adminPassword and request.form['username'] == 'admin':
-    #        session['logged_in'] = True
-    #    else:
-    #        flash('wrong password!')
-    #    return redirect(url_for('index'))
 
     # Broadcast an event over the socket
     def broadcast(self,id,data):
@@ -107,11 +74,3 @@ class WebServer:
     @socketio.on('onConnect')
     def connectEvent(msg):
         dispatcher.send(signal='connectEvent')
-
-    @socketio.on('on_save_admin_settings')
-    def adminSaveEvent(data):
-        dispatcher.send(signal='save_admin_settings',ssid=data['ssid'].rstrip(),password=data['password'])
-        app.adminMode = False
-
-    def setAdminMode(self,bActive):
-        app.adminMode = bActive
