@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <title>RustyBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/jquery.scrolly.min.js"></script>
+    <script src="assets/js/jquery.poptrox.min.js"></script>
+    <script src="assets/js/skel.min.js"></script>
+    <script src="assets/js/util.js"></script>
+    <script src="assets/js/socket.io.min.js"></script>
+    <script>
+    var socket = io.connect('http://' + document.domain + ':' + location.port + "/");
+    function callFunction(func,a1,a2){
+      console.log("click")
+      if (!a1) {
+        a1 = ""
+      }
+      if (!a2) {
+        a2 = ""
+      }
+      socket.emit('on_call_function', {functionName:func,arg1:a1,arg2:a2});
+    }
+    </script>
+</head>
+
+  <body>
+    <div class="container">
+      <h1>Welcome to RustyBot!</h1>
+      <input type="button" name="button" value="Pause/Resume Routine" onClick="callFunction('Software_PauseToggle')">
+      <br><input type="button" name="button" value="Turn On All LED's" onClick="callFunction('LED_SetAll',1)">
+      <br><input type="button" name="button" value="Turn Off All LED's" onClick="callFunction('LED_SetAll',0)">
+      <br><input type="button" name="button" value="Play buzzer.wav" onClick="callFunction('Play_WAV','buzzer.wav')">
+    </div>
+  </body>
+</html>

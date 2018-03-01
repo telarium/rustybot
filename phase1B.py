@@ -1,7 +1,12 @@
 from timeit import default_timer as timer
+from pydispatch import dispatcher
 from webserver import WebServer
+import subprocess
+import time
 import random
 import math
+
+Web_Server = WebServer() # Webserver running on BBB for an HTML interface
 
 try:
     import Adafruit_BBIO.GPIO as GPIO
@@ -73,7 +78,7 @@ Homing_Needed = True # if a limit switch is hit then at the next resting state t
 Debug_Print_Timer = 0 # seconds tracker for debug messages so as not to clog up program performance
 Homing_Hit_Count = 0 # for debugging drift
 
-Web_Server = WebServer() # Webserver running on BBB for an HTML interface
+
 # ---------------------------------------
 
 
@@ -191,14 +196,15 @@ def gpioOutput(pin,val):
 
         GPIO.output(pin,val)
     except:
-        #print "GPIO output: " + str(pin) + ", " + str(val)
+        print "GPIO output: " + str(pin) + ", " + str(val)
+        #print Bot_State
         pass
 
 def gpioInput(pin):
     try:
-        GPIO.input(Pause_Switch_Pin)
+        return GPIO.input(pin)
     except:
-        pass
+        return 0
 
 def gpioCleanup():
     try:
@@ -255,6 +261,45 @@ gpioSetup(PIR_Pin, "in")
 State1000_Duration = random.uniform(State1000_Min_Duration, State1000_Max_Duration) # random time between min and max
 
 
+def Software_PauseToggle():
+    global Program_Paused_Software
+    Program_Paused_Software = not Program_Paused_Software
+
+def Play_WAV(filename):
+    subprocess.Popen("aplay " + filename, shell=True)
+
+def LED_SetAll(on=0):
+    print "Set all LED's: " + str(on)
+    LED_Brain_Activity_Bright = Full_OFF
+    LED_Eye1_Bright = Full_OFF
+    LED_Eye2_Bright = Full_OFF
+    LED4_Bright = Full_OFF
+    LED_Monitor_Bright = Full_OFF
+
+    if int(on) == 1:
+        LED_Brain_Activity_Bright = threshold_led(LED_Brain_Activity_Bright)
+        LED_Eye1_Bright = threshold_led(LED_Eye1_Bright)
+        LED_Eye2_Bright = threshold_led(LED_Eye2_Bright)
+        LED4_Bright = threshold_led(LED4_Bright)
+        LED_Monitor_Bright = threshold_led(LED_Monitor_Bright)
+
+    pwmSetDutyCycle(LED_Brain_Activity_Pin, LED_Brain_Activity_Bright)
+    pwmSetDutyCycle(LED_Eye1_Pin, LED_Eye1_Bright)
+    pwmSetDutyCycle(LED_Eye2_Pin, LED_Eye2_Bright)
+    pwmSetDutyCycle(LED4_Pin, LED4_Bright)
+    pwmSetDutyCycle(LED_Monitor_R_Pin, LED_Monitor_Bright) 
+    pwmSetDutyCycle(LED_Monitor_G_Pin, LED_Monitor_Bright)
+    pwmSetDutyCycle(LED_Monitor_B_Pin, LED_Monitor_Bright)
+
+def WebCallback(functionName=None,arg1=None,arg2=None):
+    args = "()"
+    if arg1 and not arg2:
+        args = "('"+str(arg1)+"')"
+    elif arg1 and arg2:
+        args = "('"+str(arg1)+"','"+str(arg2)+"')"
+    exec functionName+args
+
+dispatcher.connect( WebCallback,  signal="call_function", sender=dispatcher.Any )
 
 '''
    Stepper motor function, non-blocking
@@ -350,8 +395,6 @@ def box_muller(Sigma, Mean):
     using the Box-Muller method.
 '''
 
-Web_Server.start()
-
 try:
     while True:
         pause = False
@@ -385,8 +428,10 @@ try:
         elif Bot_State == 5000 and not Limit_Hit:
             Bot_State = 200 # homing routine
 
+        time.sleep(0.001)
+
         if not pause:
-            print "Update!"
+            
             if PIR_Trigger:
                 PIR_time = Now_time
                 PIR_Paused = False
