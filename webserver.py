@@ -24,13 +24,13 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 app = Flask(__name__, static_folder='webpage')
-app.config['SECRET_KEY'] = 'H4114'
+app.config['SECRET_KEY'] = 'rustybot'
 socketio = SocketIO(app, async_mode='threading', ping_timeout=30, logger=True, engineio_logger=True)
 
 class WebServer:
     # Start the web server on port 80
     def __init__(self):
-        thread.start_new_thread(lambda: socketio.run(app,host='0.0.0.0',port=80,debug=False), ())
+        thread.start_new_thread(lambda: socketio.run(app,host='0.0.0.0',port=5000,debug=False), ())
         self.socket = socketio
 
     # Broadcast an event over the socket

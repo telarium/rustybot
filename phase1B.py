@@ -222,7 +222,7 @@ def pwmSetDutyCycle(channel,duty):
     try:
         PWM.set_duty_cycle(channel,duty)
     except:
-        #print "PWM duty cycle: " + str(channel) + ", " + str(duty)
+        print "PWM duty cycle: " + str(channel) + ", " + str(duty)
         pass
 
 def pwmCleanup():
@@ -268,28 +268,21 @@ def Software_PauseToggle():
 def Play_WAV(filename):
     subprocess.Popen("aplay " + filename, shell=True)
 
-def LED_SetAll(on=0):
-    print "Set all LED's: " + str(on)
-    LED_Brain_Activity_Bright = Full_OFF
-    LED_Eye1_Bright = Full_OFF
-    LED_Eye2_Bright = Full_OFF
-    LED4_Bright = Full_OFF
-    LED_Monitor_Bright = Full_OFF
+def LED_SetAll(val=0):
+    if val == 1 or val == "1":
+        val = Full_ON
+    else:
+        val = Full_OFF
 
-    if int(on) == 1:
-        LED_Brain_Activity_Bright = threshold_led(LED_Brain_Activity_Bright)
-        LED_Eye1_Bright = threshold_led(LED_Eye1_Bright)
-        LED_Eye2_Bright = threshold_led(LED_Eye2_Bright)
-        LED4_Bright = threshold_led(LED4_Bright)
-        LED_Monitor_Bright = threshold_led(LED_Monitor_Bright)
+    print "Set all LED's: " + str(val)
 
-    pwmSetDutyCycle(LED_Brain_Activity_Pin, LED_Brain_Activity_Bright)
-    pwmSetDutyCycle(LED_Eye1_Pin, LED_Eye1_Bright)
-    pwmSetDutyCycle(LED_Eye2_Pin, LED_Eye2_Bright)
-    pwmSetDutyCycle(LED4_Pin, LED4_Bright)
-    pwmSetDutyCycle(LED_Monitor_R_Pin, LED_Monitor_Bright) 
-    pwmSetDutyCycle(LED_Monitor_G_Pin, LED_Monitor_Bright)
-    pwmSetDutyCycle(LED_Monitor_B_Pin, LED_Monitor_Bright)
+    pwmSetDutyCycle(LED_Brain_Activity_Pin, val)
+    pwmSetDutyCycle(LED_Eye1_Pin, val)
+    pwmSetDutyCycle(LED_Eye2_Pin, val)
+    pwmSetDutyCycle(LED4_Pin, val)
+    pwmSetDutyCycle(LED_Monitor_R_Pin, val) 
+    pwmSetDutyCycle(LED_Monitor_G_Pin, val)
+    pwmSetDutyCycle(LED_Monitor_B_Pin, val)
 
 def WebCallback(functionName=None,arg1=None,arg2=None):
     args = "()"
@@ -772,7 +765,7 @@ try:
                 # ---------------------------------------
 
       
-        elif pause or PIR_Paused: # If program paused
+        elif not Program_Paused_Software and PIR_Paused: # If program paused via physical button
             LED_Brain_Activity_Bright = Full_OFF
             LED_Eye1_Bright = Full_OFF
             LED_Eye2_Bright = Full_OFF
@@ -781,25 +774,26 @@ try:
 
             print("program paused...")
       
+        if not Program_Paused_Software:
+            # thresholding LED vals for overshoot on 255 and 0
+            # also adjusting to 0-100 scale for python IO library
+            LED_Brain_Activity_Bright = threshold_led(LED_Brain_Activity_Bright)
+            LED_Eye1_Bright = threshold_led(LED_Eye1_Bright)
+            LED_Eye2_Bright = threshold_led(LED_Eye2_Bright)
+            LED4_Bright = threshold_led(LED4_Bright)
+            LED_Monitor_Bright = threshold_led(LED_Monitor_Bright)
 
-        # thresholding LED vals for overshoot on 255 and 0
-        # also adjusting to 0-100 scale for python IO library
-        LED_Brain_Activity_Bright = threshold_led(LED_Brain_Activity_Bright)
-        LED_Eye1_Bright = threshold_led(LED_Eye1_Bright)
-        LED_Eye2_Bright = threshold_led(LED_Eye2_Bright)
-        LED4_Bright = threshold_led(LED4_Bright)
-        LED_Monitor_Bright = threshold_led(LED_Monitor_Bright)
+            # writing LED outputs
+            pwmSetDutyCycle(LED_Brain_Activity_Pin, LED_Brain_Activity_Bright)
+            pwmSetDutyCycle(LED_Eye1_Pin, LED_Eye1_Bright)
+            pwmSetDutyCycle(LED_Eye2_Pin, LED_Eye2_Bright)
+            pwmSetDutyCycle(LED4_Pin, LED4_Bright)
+            # using a single bright var for the monitor will default it to white
+            # color variability should be added 
+            pwmSetDutyCycle(LED_Monitor_R_Pin, LED_Monitor_Bright) 
+            pwmSetDutyCycle(LED_Monitor_G_Pin, LED_Monitor_Bright)
+            pwmSetDutyCycle(LED_Monitor_B_Pin, LED_Monitor_Bright)
 
-        # writing LED outputs
-        pwmSetDutyCycle(LED_Brain_Activity_Pin, LED_Brain_Activity_Bright)
-        pwmSetDutyCycle(LED_Eye1_Pin, LED_Eye1_Bright)
-        pwmSetDutyCycle(LED_Eye2_Pin, LED_Eye2_Bright)
-        pwmSetDutyCycle(LED4_Pin, LED4_Bright)
-        # using a single bright var for the monitor will default it to white
-        # color variability should be added 
-        pwmSetDutyCycle(LED_Monitor_R_Pin, LED_Monitor_Bright) 
-        pwmSetDutyCycle(LED_Monitor_G_Pin, LED_Monitor_Bright)
-        pwmSetDutyCycle(LED_Monitor_B_Pin, LED_Monitor_Bright)
 except KeyboardInterrupt:
     print("interrupted by user keyboard")
     print("Limit switches hit: ",Homing_Hit_Count )
